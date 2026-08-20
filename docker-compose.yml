@@ -1,63 +1,42 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: devhub-postgres
-    environment:
-      POSTGRES_USER: devhub
-      POSTGRES_PASSWORD: devhub_password
-      POSTGRES_DB: devhub
-    ports:
-      - "5432:5432"
-    volumes:
-      - devhub-postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U devhub -d devhub"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
   devhub-api:
     build:
       context: .
       dockerfile: packages/api/Dockerfile
     container_name: devhub-api
-    depends_on:
-      postgres:
-        condition: service_healthy
     ports:
       - "3001:3001"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - PORT=3001
-      - DATABASE_URL=${DATABASE_URL:-postgresql://devhub:devhub_password@postgres:5432/devhub?schema=public}
-      - JWT_SECRET=${JWT_SECRET}
+      - DATABASE_URL=file:/app/data/devhub.db
+      - JWT_SECRET=devhub-docker-jwt-secret-not-for-production
       - JWT_EXPIRES_IN=7d
       - JWT_REFRESH_EXPIRES_IN=30d
-      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:5173}
+      - CORS_ORIGIN=http://localhost:5173
+    volumes:
+      - devhub-data:/app/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 30s
 
-  devhub-studio:
+  devhub-web:
     build:
       context: .
-      dockerfile: packages/api/Dockerfile
-    container_name: devhub-studio
-    depends_on:
-      postgres:
-        condition: service_healthy
+      dockerfile: packages/web/Dockerfile
+      args:
+        VITE_API_URL: http://localhost:3001/api
+    container_name: devhub-web
     ports:
-      - "5555:5555"
-    environment:
-      - DATABASE_URL=${DATABASE_URL:-postgresql://devhub:devhub_password@postgres:5432/devhub?schema=public}
-    working_dir: /app/packages/database
-    command: npx prisma studio --port 5555 --hostname 0.0.0.0
+      - "5173:80"
+    depends_on:
+      devhub-api:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
-  devhub-postgres-data:
+  devhub-data:

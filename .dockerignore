@@ -5,7 +5,7 @@ node_modules/
 .git/
 .gitignore
 
-# Environment files (injected at runtime, not build time)
+# Environment files
 .env
 .env.*
 !.env.example
@@ -26,10 +26,8 @@ Thumbs.db
 dist/
 coverage/
 *.tsbuildinfo
-vite.config.d.ts
-vite.config.js
 
-# Documentation and presentations
+# Documentation
 *.pptx
 *.docx
 *.md
@@ -45,6 +43,3 @@ vite.config.js
 start_servers.ps1
 run_api.bat
 e2e_test.ps1
-
-# Frontend (not needed in API Docker image)
-packages/web/

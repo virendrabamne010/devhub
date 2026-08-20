@@ -28,7 +28,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const token = localStorage.getItem('devhub_token');
     if (refreshToken && token) {
       try {
-        await fetch('http://localhost:3001/api/auth/logout', {
+        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}/auth/logout`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

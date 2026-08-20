@@ -4,8 +4,10 @@ import axios, {
   InternalAxiosRequestConfig,
 } from 'axios';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
 const api: AxiosInstance = axios.create({
-  baseURL: 'http://localhost:3001/api',
+  baseURL: API_BASE,
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
@@ -20,7 +22,7 @@ async function tryRefreshToken(): Promise<string | null> {
   if (!refreshToken) return null;
 
   try {
-    const { data } = await axios.post('http://localhost:3001/api/auth/refresh', { refreshToken }, { timeout: 15000 });
+    const { data } = await axios.post(`${API_BASE}/auth/refresh`, { refreshToken }, { timeout: 15000 });
     const newToken: string | undefined = data?.token;
     const newRefresh: string | undefined = data?.refreshToken;
     if (newToken) {
