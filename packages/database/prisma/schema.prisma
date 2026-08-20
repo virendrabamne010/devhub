@@ -1,0 +1,364 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// DevHub - Complete DevOps Management Platform
+// Database Schema v2.0
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// Identity & Access Management
+// -----------------------------------------------------------------------------
+
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  passwordHash    String?
+  name            String?
+  avatarUrl       String?
+  role            String    @default("DEVELOPER") // ADMIN, MANAGER, DEVELOPER, VIEWER
+  isActive        Boolean   @default(true)
+  emailVerified   Boolean   @default(false)
+  verificationToken String?
+  lastLoginAt     DateTime?
+  deletedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  teams           TeamMember[]
+  sessions        Session[]
+  refreshTokens   RefreshToken[]
+  auditLogs       AuditLog[]
+  commits         Commit[]
+  deployments     Deployment[]
+  comments        Comment[]
+  notifications   Notification[]
+  activityLogs    ActivityLog[]
+
+  @@index([email])
+  @@index([role])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  token        String   @unique
+  expiresAt    DateTime
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model RefreshToken {
+  id           String   @id @default(uuid())
+  userId       String
+  token        String   @unique
+  expiresAt    DateTime
+  isRevoked    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// -----------------------------------------------------------------------------
+// Organization & Projects
+// -----------------------------------------------------------------------------
+
+model Team {
+  id          String       @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  members     TeamMember[]
+  projects    Project[]
+
+  @@index([name])
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String       @id @default(uuid())
+  teamId    String
+  userId    String
+  role      String       @default("MEMBER") // OWNER, ADMIN, MEMBER
+  joinedAt  DateTime     @default(now())
+
+  team      Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([userId])
+  @@map("team_members")
+}
+
+model Project {
+  id          String       @id @default(uuid())
+  name        String
+  description String?
+  status      String       @default("ACTIVE") // ACTIVE, ARCHIVED, COMPLETED
+  teamId      String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  team        Team         @relation(fields: [teamId], references: [id], onDelete: Restrict)
+  repos       Repository[]
+  environments Environment[]
+  activityLogs ActivityLog[]
+
+  @@index([teamId])
+  @@index([status])
+  @@map("projects")
+}
+
+model Repository {
+  id            String       @id @default(uuid())
+  projectId     String
+  name          String
+  url           String
+  provider      String       @default("GITHUB") // GITHUB, GITLAB, BITBUCKET
+  defaultBranch String       @default("main")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  project       Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  commits       Commit[]
+  deployments   Deployment[]
+  webhooks      Webhook[]
+
+  @@index([projectId])
+  @@map("repositories")
+}
+
+// -----------------------------------------------------------------------------
+// CI/CD & Deployments
+// -----------------------------------------------------------------------------
+
+model Commit {
+  id           String       @id @default(uuid())
+  repositoryId String
+  authorId     String?
+  sha          String       @unique
+  message      String
+  branch       String
+  url          String?
+  additions    Int          @default(0)
+  deletions    Int          @default(0)
+  committedAt  DateTime
+  createdAt    DateTime     @default(now())
+
+  repository   Repository   @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  author       User?        @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  deployments  Deployment[]
+
+  @@index([repositoryId])
+  @@index([branch])
+  @@index([committedAt])
+  @@map("commits")
+}
+
+model Environment {
+  id          String       @id @default(uuid())
+  projectId   String
+  name        String       // development, staging, production
+  url         String?
+  branch      String?      // Git branch associated with this env
+  createdAt   DateTime     @default(now())
+
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  deployments Deployment[]
+  monitoringTargets MonitoringTarget[]
+
+  @@unique([projectId, name])
+  @@map("environments")
+}
+
+model Deployment {
+  id            String       @id @default(uuid())
+  repositoryId  String
+  environmentId String
+  commitId      String?
+  initiatorId   String?
+  status        String       @default("PENDING") // PENDING, IN_PROGRESS, SUCCESS, FAILED, ROLLED_BACK, CANCELLED
+  version       String?
+  logs          String?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime     @default(now())
+
+  repository   Repository   @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  environment  Environment  @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  commit       Commit?      @relation(fields: [commitId], references: [id], onDelete: SetNull)
+  initiator    User?        @relation(fields: [initiatorId], references: [id], onDelete: SetNull)
+
+  @@index([repositoryId])
+  @@index([environmentId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("deployments")
+}
+
+// -----------------------------------------------------------------------------
+// Monitoring & Analytics
+// -----------------------------------------------------------------------------
+
+model MonitoringTarget {
+  id            String       @id @default(uuid())
+  environmentId String
+  name          String
+  url           String
+  method        String       @default("GET")
+  checkInterval Int          @default(60) // in seconds
+  timeout       Int          @default(5000) // in ms
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  environment   Environment  @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  pingHistory   PingHistory[]
+
+  @@index([environmentId])
+  @@map("monitoring_targets")
+}
+
+model PingHistory {
+  id             String            @id @default(uuid())
+  targetId       String
+  status         Int               // HTTP status code
+  responseTimeMs Int               // Response time in ms
+  isUp           Boolean
+  errorMessage   String?
+  timestamp      DateTime          @default(now())
+
+  target         MonitoringTarget  @relation(fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@index([targetId])
+  @@index([timestamp])
+  @@map("ping_history")
+}
+
+// -----------------------------------------------------------------------------
+// Security & System
+// -----------------------------------------------------------------------------
+
+model AuditLog {
+  id         String       @id @default(uuid())
+  userId     String?
+  action     String       // CREATE, READ, UPDATE, DELETE, LOGIN, LOGOUT
+  resource   String       // The model name
+  resourceId String?
+  metadata   String?      // JSON string with extra data
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime     @default(now())
+
+  user       User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model ActivityLog {
+  id         String       @id @default(uuid())
+  projectId  String?
+  userId     String?
+  type       String       // DEPLOYMENT, COMMIT, COMMENT, TEAM_UPDATE, etc.
+  details    String       // JSON string
+  createdAt  DateTime     @default(now())
+
+  project    Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user       User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+model Webhook {
+  id           String       @id @default(uuid())
+  repositoryId String
+  providerId   String
+  url          String
+  secret       String?
+  events       String       // JSON array of event types
+  isActive     Boolean      @default(true)
+  lastTriggeredAt DateTime?
+  createdAt    DateTime     @default(now())
+
+  repository   Repository   @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@index([repositoryId])
+  @@map("webhooks")
+}
+
+model ApiKey {
+  id          String     @id @default(uuid())
+  name        String
+  keyHash     String     @unique
+  prefix      String
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+
+  @@index([keyHash])
+  @@index([prefix])
+  @@map("api_keys")
+}
+
+model Notification {
+  id         String     @id @default(uuid())
+  userId     String
+  type       String     // INFO, WARNING, ERROR, SUCCESS
+  title      String
+  message    String
+  isRead     Boolean    @default(false)
+  linkUrl    String?
+  createdAt  DateTime   @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model Comment {
+  id         String   @id @default(uuid())
+  userId     String
+  resource   String   // The model type (Deployment, Commit, etc.)
+  resourceId String
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([resource, resourceId])
+  @@map("comments")
+}

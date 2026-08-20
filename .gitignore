@@ -1,0 +1,87 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# SQLite databases (keep the migration SQL in version control)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Test coverage
+coverage/
+
+# TypeScript build info
+*.tsbuildinfo
+vite.config.d.ts
+vite.config.js
+
+# Debug/audit/temp files
+audit_*.txt
+api_boot*.log
+api_clean*.log
+api_fix*.log
+api_info_check.txt
+fresh_boot.log
+fresh_check.txt
+fresh_verify.txt
+jest_out.txt
+kill_log.txt
+port*.txt
+procs.txt
+test_result*.txt
+verify_test.txt
+web_boot.log
+audit_err.log
+
+# Local helper scripts (not part of the source)
+start_servers.ps1
+run_api.bat
+e2e_test.ps1
+restart_api.ps1
+
+# Python scripts (doc generation, not part of app)
+generate_report.py
+generate_report_docx.py
+generate_synopsis.py
+generate_ppt.py
+verify_report.py
+
+# Build artifacts
+packages/web/tsconfig.node.tsbuildinfo
+packages/web/tsconfig.tsbuildinfo
+packages/web/vite.config.d.ts
+packages/web/vite.config.js
+packages/web/vite.config.tsbuildinfo
+packages/web/src/vite-env.d.ts
+
+# Old generated files
+packages/database/generated.OLD/

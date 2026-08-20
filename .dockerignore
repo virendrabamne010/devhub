@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+
+# Git
+.git/
+.gitignore
+
+# Environment files (injected at runtime, not build time)
+.env
+.env.*
+!.env.example
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Database files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Build artifacts
+dist/
+coverage/
+*.tsbuildinfo
+vite.config.d.ts
+vite.config.js
+
+# Documentation and presentations
+*.pptx
+*.docx
+*.md
+*.txt
+
+# Python scripts
+*.py
+
+# Debug/audit logs
+*.log
+
+# Local scripts
+start_servers.ps1
+run_api.bat
+e2e_test.ps1
+
+# Frontend (not needed in API Docker image)
+packages/web/

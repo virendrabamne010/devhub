@@ -1,0 +1,14 @@
+Follow this standard slide sequence:
+1. Title Slide
+2. Problem Statement
+3. Objectives
+4. Project Overview / Architecture
+5. Methodology
+6. Implementation Progress / Work Completed
+7. Key Features
+8. Testing & Quality
+9. Expected Outcomes
+10. Future Scope
+11. Conclusion
+
+Use the content in Project_Presentation_Slides.md and keep the same order and structure as the template attached in the request.
