@@ -10,8 +10,8 @@
     "dev:once": "tsx src/index.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "start": "tsx src/index.ts",
-    "seed": "tsx ../database/prisma/seed.ts",
+    "start": "npx tsx src/index.ts",
+    "seed": "npx tsx ../database/prisma/seed.ts",
     "test": "jest --passWithNoTests",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write src"
