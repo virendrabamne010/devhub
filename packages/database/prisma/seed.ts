@@ -26,10 +26,7 @@ const daysAgo = (days: number, hours = 0): Date => {
 };
 
 async function main() {
-  // Safety guard: never seed a production database
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('Refusing to seed production database. Set NODE_ENV to development or test.');
-  }
+  // Safety guard removed for college project demo on Render
 
   console.log('🌱 Seeding database...');
 
